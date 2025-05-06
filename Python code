@@ -1,0 +1,62 @@
+import pandas as pd
+import requests
+
+# --- Telegram ---
+bot_token = 'Telegram Token'
+chat_id = '00000000' #chat id from telegram
+
+# --- upload CSV --- upload .cvs file manually
+df = pd.read_csv('data from spotify for artists')
+df['date'] = pd.to_datetime(df['date'])
+df = df.sort_values('date')
+
+# Last two days
+últimos_dos = df.tail(2)
+
+# Streams
+streams_ayer = últimos_dos.iloc[0]['streams']
+streams_hoy = últimos_dos.iloc[1]['streams']
+fecha_hoy = últimos_dos.iloc[1]['date'].date()
+
+# Listeners
+listeners_ayer = últimos_dos.iloc[0]['listeners']
+listeners_hoy = últimos_dos.iloc[1]['listeners']
+
+# Followers
+followers_ayer = últimos_dos.iloc[0]['followers']
+followers_hoy = últimos_dos.iloc[1]['followers']
+
+# Comparisons
+dif_streams = streams_hoy - streams_ayer
+dif_listeners = listeners_hoy - listeners_ayer
+dif_followers = followers_hoy - followers_ayer
+
+# Most streams day
+dia_max = df[df['streams'] == df['streams'].max()].iloc[0]
+fecha_max_streams = dia_max['date'].date()
+max_streams = dia_max['streams']
+
+# Mensaje de resumen
+mensaje = f"""
+🎧 Resumen de actividad - {fecha_hoy}:
+
+🎵 Streams:
+Ayer: {streams_ayer}, Hoy: {streams_hoy} ({'📈' if dif_streams > 0 else '🔻' if dif_streams < 0 else '➖'} {dif_streams:+})
+
+👥 Listeners:
+Ayer: {listeners_ayer}, Hoy: {listeners_hoy} ({'📈' if dif_listeners > 0 else '🔻' if dif_listeners < 0 else '➖'} {dif_listeners:+})
+
+🌟 Followers:
+Ayer: {followers_ayer}, Hoy: {followers_hoy} ({'📈' if dif_followers > 0 else '🔻' if dif_followers < 0 else '➖'} {dif_followers:+})
+
+🏆 Day with max streams in the week:
+{fecha_max_streams} con {max_streams} streams.
+"""
+
+# Send message to Telegram
+url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+data = {
+    'chat_id': chat_id,
+    'text': mensaje
+}
+requests.post(url, data=data)
